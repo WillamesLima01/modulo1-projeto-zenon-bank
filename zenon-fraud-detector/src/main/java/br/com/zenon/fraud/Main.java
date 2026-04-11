@@ -1,6 +1,7 @@
 package br.com.zenon.fraud;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class Main {
 
@@ -19,5 +20,13 @@ public class Main {
 
         IO.println(t1);
         IO.println(t2);
+
+        System.out.println("____________________________________________");
+
+        var transactionIngestor = new TransactionIngestor();
+        List<Transaction> transactions = transactionIngestor.read("zenon-fraud-detector/data/PS_20174392719_1491204439457_log.csv");
+        IO.println(transactions.size());
+
+        transactions.stream().limit(10).forEach(IO::println);
     }
 }
