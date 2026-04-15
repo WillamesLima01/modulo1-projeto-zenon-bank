@@ -2,6 +2,8 @@ package br.com.zenon.fraud;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class Main {
 
@@ -44,5 +46,31 @@ public class Main {
                 transactionIngestor.read("zenon-fraud-detector/data/paysim_with_bad_data.csv");
         System.out.println(transactionsBadData.size());
         transactionsBadData.forEach(System.out::println);
+
+        System.out.println("_______________________________________________________________________________________");
+
+        var fraudAnalyzer = new FraudAnalyzer(transactions);
+
+        long fraudCount = fraudAnalyzer.countFrauds();
+        IO.println("Total de fraudes: " + fraudCount);
+
+        List<BigDecimal> highestFraudAmounts = fraudAnalyzer.findHighestValueFraudAmounts(3);
+
+        IO.println("Top 3 fraudes de maior valor:");
+
+        highestFraudAmounts.stream()
+                .forEach(amount -> System.out.printf("- %.2f%n", amount));
+
+        List<String> suspiciousClients = fraudAnalyzer.findTopSuspiciousClients(5);
+        IO.println("Top 5 clientes suspeitos:");
+        suspiciousClients.forEach(IO::println);
+
+        BigDecimal totalFraudLoss = fraudAnalyzer.CalculateTotalFraudLoss();
+        IO.println("Prejuízo total: " + totalFraudLoss);
+
+        Map<TransactionType, Long> fraudCountByType = fraudAnalyzer.countFraudsByType();
+        IO.println("Fraudes por tipo:");
+        fraudCountByType.forEach((type, count) -> IO.println("- %s: %d".formatted(type, count)));
     }
+
 }
