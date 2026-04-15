@@ -8,51 +8,68 @@ import java.util.Optional;
 
 public class TransactionIngestor {
 
-    public static final int FRAUD_LINIT = 100_000;
+    public static final int TRANSACTION_LIMIT = 100_000;
 
-    public List<Transaction>read(String fileName){
-
+    public List<Transaction> read(String fileName) {
         Path path = Path.of(fileName);
 
         try {
             List<String> lines = Files.readAllLines(path);
+
             return lines.stream()
                     .skip(1)
-                    .limit(FRAUD_LINIT)
+                    .limit(TRANSACTION_LIMIT)
                     .map(this::parseTransaction)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .toList();
 
-        } catch (Exception ex){
-
+        } catch (Exception ex) {
             throw new RuntimeException("Erro ao ler o arquivo: " + fileName, ex);
-
         }
     }
 
     private Optional<Transaction> parseTransaction(String line) {
         try {
-            String[] chunks = line.split(",");
+            String[] chunks = line.split(",", -1);
 
             int step = Integer.parseInt(chunks[0]);
             TransactionType type = TransactionType.valueOf(chunks[1]);
 
-            if (chunks[2] == null || chunks[2].trim().isEmpty()) throw new IllegalArgumentException("O valor de amount não pode ser nulo ou vazio");
+            if (chunks[2] == null || chunks[2].trim().isEmpty()) {
+                throw new IllegalArgumentException("O valor de amount não pode ser nulo ou vazio");
+            }
+
             BigDecimal amount = new BigDecimal(chunks[2]);
 
-            var origin = new TransactionCustomer(chunks[3], new BigDecimal(chunks[4]), new BigDecimal(chunks[5]));
-            var recipient = new TransactionCustomer(chunks[6], new BigDecimal(chunks[7]), new BigDecimal(chunks[8]));
+            var origin = new TransactionCustomer(
+                    chunks[3],
+                    new BigDecimal(chunks[4]),
+                    new BigDecimal(chunks[5])
+            );
+
+            var recipient = new TransactionCustomer(
+                    chunks[6],
+                    new BigDecimal(chunks[7]),
+                    new BigDecimal(chunks[8])
+            );
 
             boolean isFraud = "1".equals(chunks[9]);
+            boolean isFlaggedFraud = "1".equals(chunks[10]);
 
-            boolean isFraggedFraud = "1".equals(chunks[10]);
+            return Optional.of(new Transaction(
+                    step,
+                    type,
+                    amount,
+                    origin,
+                    recipient,
+                    isFraud,
+                    isFlaggedFraud
+            ));
 
-            return Optional.of(new Transaction(step, type, amount, origin, recipient, isFraud, isFraggedFraud));
         } catch (Exception e) {
             System.err.println("Erro ao fazer parse : " + line + " | " + e);
             return Optional.empty();
         }
-
     }
-};
+}

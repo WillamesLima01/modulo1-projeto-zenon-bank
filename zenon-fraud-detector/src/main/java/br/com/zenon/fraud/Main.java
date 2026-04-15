@@ -92,7 +92,7 @@ public class Main {
         long endTimeList = System.nanoTime();
         IO.println("Tempo de busca - List (ms): " + (endTimeList - startTimeList / 1_000_000.0));
 
-        
+
 
         transactionRepository = new TransactionListRepository(transactions);
         startTimeList = System.nanoTime();
