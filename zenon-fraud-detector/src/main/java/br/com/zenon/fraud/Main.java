@@ -2,7 +2,6 @@ package br.com.zenon.fraud;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class Main {
@@ -36,14 +35,14 @@ public class Main {
         var transactionIngestor = new TransactionIngestor();
 
         List<Transaction> transactions =
-                transactionIngestor.read("zenon-fraud-detector/data/PS_20174392719_1491204439457_log.csv");
+                transactionIngestor.read("data/PS_20174392719_1491204439457_log.csv");
         System.out.println(transactions.size());
         transactions.stream().limit(10).forEach(System.out::println);
 
         System.out.println("_______________________________________________________________________________________");
 
         List<Transaction> transactionsBadData =
-                transactionIngestor.read("zenon-fraud-detector/data/paysim_with_bad_data.csv");
+                transactionIngestor.read("data/paysim_with_bad_data.csv");
         System.out.println(transactionsBadData.size());
         transactionsBadData.forEach(System.out::println);
 
@@ -52,25 +51,24 @@ public class Main {
         var fraudAnalyzer = new FraudAnalyzer(transactions);
 
         long fraudCount = fraudAnalyzer.countFrauds();
-        IO.println("Total de fraudes: " + fraudCount);
+        System.out.println("Total de fraudes: " + fraudCount);
 
         List<BigDecimal> highestFraudAmounts = fraudAnalyzer.findHighestValueFraudAmounts(3);
 
-        IO.println("Top 3 fraudes de maior valor:");
+        System.out.println("Top 3 fraudes de maior valor:");
 
-        highestFraudAmounts.stream()
-                .forEach(amount -> System.out.printf("- %.2f%n", amount));
+        highestFraudAmounts.forEach(amount -> System.out.printf("- %.2f%n", amount));
 
         List<String> suspiciousClients = fraudAnalyzer.findTopSuspiciousClients(5);
-        IO.println("Top 5 clientes suspeitos:");
-        suspiciousClients.forEach(IO::println);
+        System.out.println("Top 5 clientes suspeitos:");
+        suspiciousClients.forEach(System.out::println);
 
         BigDecimal totalFraudLoss = fraudAnalyzer.CalculateTotalFraudLoss();
-        IO.println("Prejuízo total: " + totalFraudLoss);
+        System.out.println("Prejuízo total: " + totalFraudLoss);
 
         Map<TransactionType, Long> fraudCountByType = fraudAnalyzer.countFraudsByType();
-        IO.println("Fraudes por tipo:");
-        fraudCountByType.forEach((type, count) -> IO.println("- %s: %d".formatted(type, count)));
+        System.out.println("Fraudes por tipo:");
+        fraudCountByType.forEach((type, count) -> System.out.println("- %s: %d".formatted(type, count)));
 
         System.out.println("_______________________________________________________________________________________");
 
@@ -79,28 +77,24 @@ public class Main {
         transactionRepository = new TransactionListRepository(transactions);
         String notFoundOriginName = "C1868032458";
         transactionRepository.findByOriginName(notFoundOriginName)
-                .ifPresentOrElse(IO::println,
-                        () -> IO.println("Transação não encontrada para o critério informado"));
+                .ifPresentOrElse(System.out::println,
+                        () -> System.out.println("Transação não encontrada para o critério informado"));
 
+        String existingOriginName = "C1868032458";
 
-       String existingOriginName = "C1868032458";
-
-       long startTimeList = System.nanoTime();
+        long startTimeList = System.nanoTime();
         transactionRepository.findByOriginName(existingOriginName)
-                .ifPresentOrElse(IO::println,
-                        () -> IO.println("Transação encontrada para " + existingOriginName));
+                .ifPresentOrElse(System.out::println,
+                        () -> System.out.println("Transação não encontrada para " + existingOriginName));
         long endTimeList = System.nanoTime();
-        IO.println("Tempo de busca - List (ms): " + (endTimeList - startTimeList / 1_000_000.0));
-
-
+        System.out.println("Tempo de busca - List (ms): " + ((endTimeList - startTimeList) / 1_000_000.0));
 
         transactionRepository = new TransactionListRepository(transactions);
         startTimeList = System.nanoTime();
         transactionRepository.findByOriginName(existingOriginName)
-                .ifPresentOrElse(IO::println,
-                        () -> IO.println("Transação encontrada para " + existingOriginName));
+                .ifPresentOrElse(System.out::println,
+                        () -> System.out.println("Transação não encontrada para " + existingOriginName));
         endTimeList = System.nanoTime();
-        IO.println("Tempo de busca - List (ms): " + (endTimeList - startTimeList / 1_000_000.0));
+        System.out.println("Tempo de busca - List (ms): " + ((endTimeList - startTimeList) / 1_000_000.0));
     }
-
 }
