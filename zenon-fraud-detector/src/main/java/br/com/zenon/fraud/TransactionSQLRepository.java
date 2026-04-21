@@ -39,7 +39,7 @@ public class TransactionSQLRepository implements TransactionRepository {
             ps.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao salvar transação no banco.", e);
+            throw new RuntimeException("Erro ao salvar transação no banco: " + transaction, e);
         }
     }
 
