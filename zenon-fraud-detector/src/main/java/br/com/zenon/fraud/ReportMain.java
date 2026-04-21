@@ -31,14 +31,15 @@ public class ReportMain {
         String msgTotalFrauds = resourceBundle.getString("label.total.frauds");
         String msgTotalAmount = resourceBundle.getString("label.total.amount");
 
-        System.out.println("""
-                %s: %s
-                %s: %s
-                %s: %s
-                """.formatted(
+        System.out.printf(
+                """
+                        %s: %s
+                        %s: %s
+                        %s: %s
+                        %n""",
                 msgTotalTransactions, fmtTotalTransactions,
                 msgTotalFrauds, fmtTotalFrauds,
                 msgTotalAmount, fmtTotalAmount
-        ));
+);
     }
 }
