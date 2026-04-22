@@ -18,7 +18,8 @@ public class DBMain {
         System.out.println(transactions.size());
         System.out.println("Iniciando adição das transações no BD...");
 
-        transactions.forEach(repository::save);
+        //transactions.forEach(repository::save);
+        repository.saveAll(transactions);
 
         long endTimeSQL = System.nanoTime();
         System.out.println("Tempo de inserção - SQL (ms): " + (endTimeSQL - startTimeSQL) / 1_000_000.0);
@@ -28,5 +29,4 @@ public class DBMain {
               ()-> System.out.println("Transação não encontrada para C1231006815"));
 
     }
-
 }

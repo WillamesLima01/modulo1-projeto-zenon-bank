@@ -5,9 +5,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 public class TransactionSQLRepository implements TransactionRepository {
+
+    public static final int JDBC_BATCH_SIZE = 1_000;
 
     @Override
     public void save(Transaction transaction) {
@@ -19,28 +22,29 @@ public class TransactionSQLRepository implements TransactionRepository {
                 """;
 
         try (Connection conn = ConnectionFactory.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)){
 
-            ps.setInt(1, transaction.step());
-            ps.setString(2, transaction.type().name());
-            ps.setBigDecimal(3, transaction.amount());
+                    ps.setInt(1, transaction.step());
+                    ps.setString(2, transaction.type().name());
+                    ps.setBigDecimal(3, transaction.amount());
 
-            ps.setString(4, transaction.origin().name());
-            ps.setBigDecimal(5, transaction.origin().oldBalance());
-            ps.setBigDecimal(6, transaction.origin().newBalance());
+                    ps.setString(4, transaction.origin().name());
+                    ps.setBigDecimal(5, transaction.origin().oldBalance());
+                    ps.setBigDecimal(6, transaction.origin().newBalance());
 
-            ps.setString(7, transaction.recipient().name());
-            ps.setBigDecimal(8, transaction.recipient().oldBalance());
-            ps.setBigDecimal(9, transaction.recipient().newBalance());
+                    ps.setString(7, transaction.recipient().name());
+                    ps.setBigDecimal(8, transaction.recipient().oldBalance());
+                    ps.setBigDecimal(9, transaction.recipient().newBalance());
 
-            ps.setBoolean(10, transaction.isFraud());
-            ps.setBoolean(11, transaction.isFlaggedFraud());
+                    ps.setBoolean(10, transaction.isFraud());
+                    ps.setBoolean(11, transaction.isFlaggedFraud());
 
-            ps.executeUpdate();
+                    ps.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao salvar transação no banco: " + transaction, e);
-        }
+        throw new RuntimeException("Erro na conexão com o DB..." + transaction, e);
+    }
+
     }
 
     @Override
@@ -96,6 +100,70 @@ public class TransactionSQLRepository implements TransactionRepository {
 
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao mapear ResultSet para Transaction.", e);
+        }
+    }
+
+    public void saveAll(List<Transaction> transactions) {
+
+        String sql = """
+                INSERT INTO transactions
+                (step, `type`, amount, name_origin, old_balance_origin, new_balance_origin, name_recipient,
+                 old_balance_recipient, new_balance_recipient, is_fraud, is_flagged_fraud)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+
+        try (Connection conn = ConnectionFactory.getConnection()){
+            conn.setAutoCommit(false);
+
+            int count = 0;
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                for (Transaction transaction : transactions) {
+
+                    ps.setInt(1, transaction.step());
+                    ps.setString(2, transaction.type().name());
+                    ps.setBigDecimal(3, transaction.amount());
+
+                    ps.setString(4, transaction.origin().name());
+                    ps.setBigDecimal(5, transaction.origin().oldBalance());
+                    ps.setBigDecimal(6, transaction.origin().newBalance());
+
+                    ps.setString(7, transaction.recipient().name());
+                    ps.setBigDecimal(8, transaction.recipient().oldBalance());
+                    ps.setBigDecimal(9, transaction.recipient().newBalance());
+
+                    ps.setBoolean(10, transaction.isFraud());
+                    ps.setBoolean(11, transaction.isFlaggedFraud());
+
+                    ps.addBatch();
+                    count++;
+
+                    if (count % JDBC_BATCH_SIZE == 0) {
+                        System.out.println("Executado o batch JDBC...");
+
+                        ps.executeBatch();
+                        conn.commit();
+                    }
+                }
+
+                System.out.println("Executado o batch final JDBC...");
+
+                ps.executeBatch();
+                conn.commit();
+                conn.setAutoCommit(true);
+
+            } catch (SQLException e) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    throw new RuntimeException("Erro ao executar rollback", ex);
+                }
+
+                throw new RuntimeException("Erro ao salvar transação no banco: ", e);
+            }
+
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro na conexão com o DB...", e);
         }
     }
 }
